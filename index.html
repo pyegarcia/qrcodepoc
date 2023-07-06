@@ -2,54 +2,33 @@
 <html>
 <head>
   <title>Google Sheets Data Retrieval</title>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script>
-    $(document).ready(function() {
-      // Get the value from the URL parameter
-      const searchValue = getUrlParameter('search');
+    function getDataFromSpreadsheet() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var searchValue = urlParams.get('search');
 
       if (!searchValue) {
         console.error('Search value not found in URL.');
-      } else {
-        // Replace 'SPREADSHEET_ID' with the actual ID of your Google Sheets spreadsheet
-        const spreadsheetId = '2PACX-1vSfpwcLvyT__6Yt2ct758LUEZ8yh96zm8Q1Bsv4lfSRI2nTLp6BbxhK9cftS8YHggHsRLnKGZVHgMKe';
-        // Replace 'SHEET_NAME' with the name of the sheet containing the data
-        const sheetName = 'SHEET1';
-
-        const url = `https://spreadsheets.google.com/feeds/cells/${spreadsheetId}/1/public/values?alt=json-in-script&callback=?`;
-
-        $.getJSON(url, function(data) {
-          const entries = data.feed.entry;
-
-          let cellValue = '';
-          for (let i = 0; i < entries.length; i++) {
-            if (entries[i].content.$t === searchValue) {
-              // The matching cell is one column to the right (assuming a 2-column structure)
-              cellValue = entries[i + 1].content.$t;
-              break;
-            }
-          }
-
-          if (cellValue) {
-            // Perform actions with the retrieved cell value, such as updating HTML elements
-            document.getElementById('cellValue').textContent = cellValue;
-          } else {
-            console.log('No matching cell value found.');
-          }
-        });
+        return;
       }
-    });
 
-    // Function to get the URL parameter value
-    function getUrlParameter(name) {
-      name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-      const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-      const results = regex.exec(location.search);
-      return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+      var apiUrl = 'https://script.google.com/macros/s/AKfycbz6bLbewaquvhzohw1gSb5W8xgT67pukd4eBUTCL2tG0oI8SfCZ8xraq0ypGMzxhMc/exec?search=' + encodeURIComponent(searchValue);
+
+      fetch(apiUrl)
+        .then(function(response) {
+          return response.text();
+        })
+        .then(function(data) {
+          var cellValueElement = document.getElementById('cellValue');
+          cellValueElement.textContent = data;
+        })
+        .catch(function(error) {
+          console.error('Error:', error);
+        });
     }
   </script>
 </head>
-<body>
+<body onload="getDataFromSpreadsheet()">
   <h1>Cell Value:</h1>
   <p id="cellValue"></p>
 </body>
