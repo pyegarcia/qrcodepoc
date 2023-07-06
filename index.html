@@ -2,46 +2,54 @@
 <html>
 <head>
   <title>Google Sheets Data Retrieval</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script>
-    function getCellValue() {
+    $(document).ready(function() {
       // Get the value from the URL parameter
-      const urlParams = new URLSearchParams(window.location.search);
-      const searchValue = urlParams.get('search');
+      const searchValue = getUrlParameter('search');
 
       if (!searchValue) {
         console.error('Search value not found in URL.');
-        return;
-      }
+      } else {
+        // Replace 'SPREADSHEET_ID' with the actual ID of your Google Sheets spreadsheet
+        const spreadsheetId = '1CrnkMGJPYJBzr3JrcPytDPKrnDVDaNLcur0S9lN4Rno';
+        // Replace 'SHEET_NAME' with the name of the sheet containing the data
+        const sheetName = 'SHEET1';
 
-      const spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1CrnkMGJPYJBzr3JrcPytDPKrnDVDaNLcur0S9lN4Rno/gviz/tq?tqx=out:json';
-      fetch(spreadsheetUrl)
-        .then(response => response.text())
-        .then(data => {
-          // Process the data retrieved from the spreadsheet
-          const start = data.indexOf('{');
-          const end = data.lastIndexOf('}') + 1;
-          const json = JSON.parse(data.slice(start, end));
-          const rows = json.table.rows;
+        const url = `https://spreadsheets.google.com/feeds/cells/${spreadsheetId}/1/public/values?alt=json-in-script&callback=?`;
 
-          // Find the row with the matching search value
-          const matchingRow = rows.find(row => row.c[0].v === searchValue);
+        $.getJSON(url, function(data) {
+          const entries = data.feed.entry;
 
-          if (matchingRow) {
-            const cellValue = matchingRow.c[1].v;
+          let cellValue = '';
+          for (let i = 0; i < entries.length; i++) {
+            if (entries[i].content.$t === searchValue) {
+              // The matching cell is one column to the right (assuming a 2-column structure)
+              cellValue = entries[i + 1].content.$t;
+              break;
+            }
+          }
+
+          if (cellValue) {
             // Perform actions with the retrieved cell value, such as updating HTML elements
             document.getElementById('cellValue').textContent = cellValue;
           } else {
-            console.log('No matching row found.');
+            console.log('No matching cell value found.');
           }
-        })
-        .catch(error => {
-          // Handle any errors that occurred during the fetch request
-          console.error('Error:', error);
         });
+      }
+    });
+
+    // Function to get the URL parameter value
+    function getUrlParameter(name) {
+      name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+      const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+      const results = regex.exec(location.search);
+      return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
     }
   </script>
 </head>
-<body onload="getCellValue()">
+<body>
   <h1>Cell Value:</h1>
   <p id="cellValue"></p>
 </body>
