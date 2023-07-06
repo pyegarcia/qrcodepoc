@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Sheets Data Retrieval</title>
+  <script>
+    function getCellValue() {
+      // Get the value from the URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchValue = urlParams.get('search');
+
+      if (!searchValue) {
+        console.error('Search value not found in URL.');
+        return;
+      }
+
+      const spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/gviz/tq?tqx=out:json';
+      fetch(spreadsheetUrl)
+        .then(response => response.text())
+        .then(data => {
+          // Process the data retrieved from the spreadsheet
+          const start = data.indexOf('{');
+          const end = data.lastIndexOf('}') + 1;
+          const json = JSON.parse(data.slice(start, end));
+          const rows = json.table.rows;
+
+          // Find the row with the matching search value
+          const matchingRow = rows.find(row => row.c[0].v === searchValue);
+
+          if (matchingRow) {
+            const cellValue = matchingRow.c[1].v;
+            // Perform actions with the retrieved cell value, such as updating HTML elements
+            document.getElementById('cellValue').textContent = cellValue;
+          } else {
+            console.log('No matching row found.');
+          }
+        })
+        .catch(error => {
+          // Handle any errors that occurred during the fetch request
+          console.error('Error:', error);
+        });
+    }
+  </script>
+</head>
+<body onload="getCellValue()">
+  <h1>Cell Value:</h1>
+  <p id="cellValue"></p>
+</body>
+</html>
